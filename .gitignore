@@ -1,0 +1,16 @@
+# python artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+
+# virtual environments
+.venv/
+
+# environment variables
+.env
+
+# downloaded data and generated artifacts
+data/
