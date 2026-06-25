@@ -1,10 +1,9 @@
-"""Central configuration for the ACE project.
+﻿"""Central configuration for Ace.
 
-"Loads environment variables and defines the paths and model defaults used
+Loads environment variables and defines the paths and model defaults used
 across the project. Import ``settings`` from here rather than reading
 ``os.environ`` in several different places.
 """
-
 from __future__ import annotations
 
 import os
@@ -13,41 +12,44 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()  
+# Load variables from a local .env file if one exists.
+load_dotenv()
 
-# Define the project root and data directories
-PROJECT_ROOT = Path(__file__).parent.parent.resolve()
+# This file lives at src/ace/config.py, so the project root is two levels up.
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = PROJECT_ROOT / "data"
 RAW_DATA_DIR = DATA_DIR / "raw"
 TEXT_DATA_DIR = DATA_DIR / "text"
 DB_PATH = DATA_DIR / "ace.db"
-CHROMA_DB_DIR = DATA_DIR / "chroma"
+CHROMA_DIR = DATA_DIR / "chroma"
+
 
 @dataclass(frozen=True)
 class Settings:
-    """Run-time settings, loaded from environment variables."""
+    """Runtime settings, assembled once at import time."""
 
-    anthropics_api_key: str | None
+    anthropic_api_key: str | None
     chat_model: str
     db_path: Path
     chroma_dir: Path
     raw_data_dir: Path
     text_data_dir: Path
 
+
 settings = Settings(
-    anthropics_api_key=os.getenv("ANTHROPIC_API_KEY"),
+    anthropic_api_key=os.getenv("ANTHROPIC_API_KEY"),
     chat_model=os.getenv("ACE_CHAT_MODEL", "claude-sonnet-4-6"),
-    db_path = DB_PATH,
-    chroma_dir = CHROMA_DB_DIR,
-    raw_data_dir = RAW_DATA_DIR,
-    text_data_dir = TEXT_DATA_DIR,
+    db_path=DB_PATH,
+    chroma_dir=CHROMA_DIR,
+    raw_data_dir=RAW_DATA_DIR,
+    text_data_dir=TEXT_DATA_DIR,
 )
 
+
 def require_api_key() -> str:
-    """Get the API key from settings, raising an error if it's not set."""
-    if not settings.anthropics_api_key:
+    """Return the Anthropic API key, or raise a clear error if it is missing."""
+    if not settings.anthropic_api_key:
         raise RuntimeError(
-            "ANTHROPIC_API_KEY is not set in the environment. Copy .env.example to .env and add your key."
-            )
-    return settings.anthropics_api_key
+            "ANTHROPIC_API_KEY is not set. Copy .env.example to .env and add your key."
+        )
+    return settings.anthropic_api_key
