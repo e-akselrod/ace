@@ -28,7 +28,7 @@ CHROMA_DIR = DATA_DIR / "chroma"
 class Settings:
     """Runtime settings, assembled once at import time."""
 
-    anthropic_api_key: str | None
+    gemini_api_key: str | None
     chat_model: str
     db_path: Path
     chroma_dir: Path
@@ -37,8 +37,8 @@ class Settings:
 
 
 settings = Settings(
-    anthropic_api_key=os.getenv("ANTHROPIC_API_KEY"),
-    chat_model=os.getenv("ACE_CHAT_MODEL", "claude-sonnet-4-6"),
+    gemini_api_key=os.getenv("GEMINI_API_KEY"),
+    chat_model=os.getenv("ACE_CHAT_MODEL", "gemini-1.5-flash"),
     db_path=DB_PATH,
     chroma_dir=CHROMA_DIR,
     raw_data_dir=RAW_DATA_DIR,
@@ -47,9 +47,9 @@ settings = Settings(
 
 
 def require_api_key() -> str:
-    """Return the Anthropic API key, or raise a clear error if it is missing."""
-    if not settings.anthropic_api_key:
+    """Return the Gemini API key, or raise a clear error if it is missing."""
+    if not settings.gemini_api_key:
         raise RuntimeError(
-            "ANTHROPIC_API_KEY is not set. Copy .env.example to .env and add your key."
+            "GEMINI_API_KEY is not set. Copy .env.example to .env and add your key."
         )
-    return settings.anthropic_api_key
+    return settings.gemini_api_key
