@@ -8,11 +8,12 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from ace.tools.queries import player_win_count, total_matches
+from ace.tools.queries import head_to_head, player_win_count, total_matches
 
 REGISTRY: dict[str, Callable[..., Any]] = {
     "player_win_count": player_win_count,
     "total_matches": total_matches,
+    "head_to_head": head_to_head,
 }
 
 def run_tool(name: str, args: dict[str, Any]) -> Any:
