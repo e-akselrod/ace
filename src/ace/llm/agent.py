@@ -1,16 +1,18 @@
-"""The agent loop: let the model answer questions using tools.
+﻿"""The agent loop: let the model answer questions using tools.
 
 Flow:
-  1. Send the user's question plus the tool menu to the model.
+  1. Send the conversation plus the tool menu to the model.
   2. If the model asks to call a tool, run it and send the result back.
   3. Repeat until the model returns a normal text answer.
 
-This is what makes Ace accurate: facts come from the database via tools, and the
-model only phrases the final answer.
+If the model cannot be reached (rate limit, busy server, bad request), the raw
+API error is translated into a ModelError with a clear, human-readable message,
+so callers never see a traceback.
 """
 from __future__ import annotations
 
 from google import genai
+from google.genai import errors as genai_errors
 from google.genai import types
 
 from ace.config import require_api_key, settings
@@ -31,26 +33,49 @@ _config = types.GenerateContentConfig(
     tools=[_tools],
 )
 
-def ask(question: str) -> str:
-    """Answer a question, using tools when the model decides it needs them."""
-    contents = [
-        types.Content(role="user", parts=[types.Part(text=question)]),
-    ]
 
-    while True:
-        response = _client.models.generate_content(
+class ModelError(Exception):
+    """Raised when the language model cannot be reached or fails to respond."""
+
+
+def _friendly_message(exc: genai_errors.APIError) -> str:
+    """Turn a raw API error into a calm, human-readable message."""
+    code = getattr(exc, "code", None)
+    if code == 429:
+        return (
+            "Ace has reached the free usage limit for now. "
+            "Please wait a minute and try again."
+        )
+    if code == 503:
+        return (
+            "The model is busy at the moment. Please try again in a few seconds."
+        )
+    return "Ace could not reach the model right now. Please try again shortly."
+
+
+def _call_model(contents: list[types.Content]):
+    """Call the model once, translating any API error into a ModelError."""
+    try:
+        return _client.models.generate_content(
             model=settings.chat_model,
             contents=contents,
             config=_config,
         )
+    except genai_errors.APIError as exc:
+        raise ModelError(_friendly_message(exc)) from exc
 
-        function_calls = response.function_calls
-        if not function_calls:
+
+def ask(question: str) -> str:
+    """Answer a single question, using tools when the model decides it needs them."""
+    contents: list[types.Content] = [
+        types.Content(role="user", parts=[types.Part(text=question)]),
+    ]
+    while True:
+        response = _call_model(contents)
+        if not response.function_calls:
             return response.text
-
         contents.append(response.candidates[0].content)
-
-        for call in function_calls:
+        for call in response.function_calls:
             result = run_tool(call.name, dict(call.args))
             contents.append(
                 types.Content(
@@ -64,25 +89,24 @@ def ask(question: str) -> str:
                 )
             )
 
+
 def chat(history: list[types.Content]) -> list[types.Content]:
-    """Continue a conversation"""
+    """Continue a conversation, using tools when needed.
 
+    Takes the conversation so far and returns a new list with the assistant's
+    reply appended. The input is not modified, so if a call fails partway the
+    caller's history stays clean and the user can simply try again.
+    """
+    convo = list(history)
     while True:
-        response = _client.models.generate_content(
-            model=settings.chat_model,
-            contents=history,
-            config=_config,
-        )
-
-        function_calls = response.function_calls
-        if not function_calls:
-            history.append(response.candidates[0].content)
-            return history
-
-        history.append(response.candidates[0].content)
-        for call in function_calls:
+        response = _call_model(convo)
+        if not response.function_calls:
+            convo.append(response.candidates[0].content)
+            return convo
+        convo.append(response.candidates[0].content)
+        for call in response.function_calls:
             result = run_tool(call.name, dict(call.args))
-            history.append(
+            convo.append(
                 types.Content(
                     role="user",
                     parts=[
