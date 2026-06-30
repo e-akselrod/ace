@@ -29,3 +29,28 @@ def total_matches() -> int:
         return conn.execute("SELECT COUNT(*) FROM matches").fetchone()[0]
     finally:
         conn.close()
+
+def head_to_head(player_a: str, player_b: str) -> dict:
+    """Return the head-to-head win counts between two players.
+
+    Counts matches each player won against the other, by exact name.
+    """
+    conn = get_connection()
+    try:
+        a_wins = conn.execute(
+            "SELECT COUNT(*) FROM matches WHERE winner_name = ? AND loser_name = ?",
+            (player_a, player_b),
+        ).fetchone()[0]
+        b_wins = conn.execute(
+            "SELECT COUNT(*) FROM matches WHERE winner_name = ? AND loser_name = ?",
+            (player_b, player_a),
+        ).fetchone()[0]
+        return {
+            "player_a": player_a,
+            "a_wins": a_wins,
+            "player_b": player_b,
+            "b_wins": b_wins,
+            "total_meetings": a_wins + b_wins,
+        }
+    finally:
+        conn.close()
