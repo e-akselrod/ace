@@ -54,3 +54,28 @@ def head_to_head(player_a: str, player_b: str) -> dict:
         }
     finally:
         conn.close()
+
+def surface_record(name: str) -> dict:
+    """Return a player's win-loss record broken down by court surface."""
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            """
+            SELECT surface,
+                   SUM(CASE WHEN winner_name = ? THEN 1 ELSE 0 END) AS wins,
+                   SUM(CASE WHEN loser_name  = ? THEN 1 ELSE 0 END) AS losses
+            FROM matches
+            WHERE (winner_name = ? OR loser_name = ?) AND surface != ''
+            GROUP BY surface
+            ORDER BY surface
+            """,
+            (name, name, name, name),
+        ).fetchall()
+
+        record = {
+            row["surface"]: {"wins": row["wins"], "losses": row["losses"]}
+            for row in rows
+        }
+        return {"player": name, "by_surface": record}
+    finally:
+        conn.close()
