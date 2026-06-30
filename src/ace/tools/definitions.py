@@ -34,4 +34,25 @@ total_matches_decl = types.FunctionDeclaration(
     ),
 )
 
-ALL_TOOLS = [player_win_count_decl, total_matches_decl]
+head_to_head_decl = types.FunctionDeclaration(
+    name="head_to_head",
+    description="Get the head-to-head record between two tennis players: how "
+                "many times each beat the other. Use this for questions "
+                "comparing two specific players, e.g. 'Federer vs Nadal'.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "player_a": types.Schema(
+                type=types.Type.STRING,
+                description="First player's full name, e.g. 'Roger Federer'.",
+            ),
+            "player_b": types.Schema(
+                type=types.Type.STRING,
+                description="Second player's full name, e.g. 'Rafael Nadal'.",
+            ),
+        },
+        required=["player_a", "player_b"],
+    ),
+)
+
+ALL_TOOLS = [player_win_count_decl, total_matches_decl, head_to_head_decl]
