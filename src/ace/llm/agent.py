@@ -63,3 +63,33 @@ def ask(question: str) -> str:
                     ],
                 )
             )
+
+def chat(history: list[types.Content]) -> list[types.Content]:
+    """Continue a conversation"""
+
+    while True:
+        response = _client.models.generate_content(
+            model=settings.chat_model,
+            contents=history,
+            config=_config,
+        )
+
+        function_calls = response.function_calls
+        if not function_calls:
+            history.append(response.candidates[0].content)
+            return history
+
+        history.append(response.candidates[0].content)
+        for call in function_calls:
+            result = run_tool(call.name, dict(call.args))
+            history.append(
+                types.Content(
+                    role="user",
+                    parts=[
+                        types.Part.from_function_response(
+                            name=call.name,
+                            response={"result": result},
+                        )
+                    ],
+                )
+            )
