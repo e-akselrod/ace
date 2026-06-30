@@ -55,4 +55,21 @@ head_to_head_decl = types.FunctionDeclaration(
     ),
 )
 
-ALL_TOOLS = [player_win_count_decl, total_matches_decl, head_to_head_decl]
+surface_record_decl = types.FunctionDeclaration(
+    name="surface_record",
+    description="Get a player's win-loss record broken down by court surface "
+                "(hard, clay, grass). Use this for questions about how a player "
+                "performs on a specific surface, e.g. 'Nadal on clay'.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "name": types.Schema(
+                type=types.Type.STRING,
+                description="The player's full name, e.g. 'Rafael Nadal'.",
+            ),
+        },
+        required=["name"],
+    ),
+)
+
+ALL_TOOLS = [player_win_count_decl, total_matches_decl, head_to_head_decl, surface_record_decl]
