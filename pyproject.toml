@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Ace: a tennis intelligence assistant powered by retrieval and tool use."
 requires-python = ">=3.10"
 dependencies = [
-    "anthropic",
+    "google-genai",
     "python-dotenv>=1.0",
     "pandas>=2.0",
     "requests>=2.31",
